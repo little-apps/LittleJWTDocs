@@ -2,8 +2,8 @@
 title: Testing
 description: 
 published: true
-date: 2022-03-27T04:44:16.091Z
-tags: claims, custom jwk, default jwk, jwk, rules, validation, validator, testing
+date: 2023-05-15T06:51:05.398Z
+tags: claims, custom jwk, default jwk, jwk, rules, testing, validation, validator
 editor: markdown
 dateCreated: 2022-03-27T04:19:59.314Z
 ---
@@ -12,7 +12,7 @@ Little JWT provides support for testing JSON Web Tokens from within PHPUnit test
 
 Normally, the [validator rules](https://docs.getlittlejwt.com/en/the-validator) would be used to determine if a JWT is valid or not. For testing purposes, Little JWT can be faked so the rules are assertions that cause the test to pass or fail instead.
 
-Before performing assertions on the JWT, call the ``fake`` method in the ``LittleJWT`` facade. This will cause the callback for the ``validateJWT`` and ``validateToken`` methods to receive a ``TestValidator`` instance. The ``TestValidator`` class provides assertion methods (listed below) as well as the [existing ``Validator`` methods](/the-validator).
+Before performing assertions on the JWT, call the ``fake`` method in the ``LittleJWT`` facade. This will cause the callback for the ``validate`` methods to receive a ``TestValidator`` instance. The ``TestValidator`` class provides assertion methods (listed below) as well as the [existing ``Validator`` methods](/the-validator).
 
 ```php
 use Tests\TestCase;
@@ -24,9 +24,9 @@ class MyTests extends TestCase {
     public function test_example() {
         LittleJWT::fake();
         
-        $jwt = LittleJWT::createJWT();
+        $jwt = LittleJWT::create();
 
-        LittleJWT::validateJWT($jwt, function (TestValidator $validator) {
+        LittleJWT::validate($jwt, function (TestValidator $validator) {
             // Method chaining can be used (just like with Validator methods)
             $validator
                 ->assertPasses()
@@ -209,12 +209,13 @@ $validator->assertInvalidSignature();
 Asserts that the JWT is or isn't blacklisted. The blacklist driver to check can optionally be specified as ``$driver``. If not specified, the default blacklist driver is used.
 
 ```php
-$driver = 'cache';
 
-// Asserts the JWT is allowed (not blacklisted) by the 'cache' blacklist driver.
+
+// Asserts the JWT is allowed (not blacklisted) by the 'cache' blacklist driver:
+$driver = 'cache';
 $validator->assertAllowed($driver);
 
-// Asserts the JWT isn't allowed (blacklisted) by the default blacklist driver.
+// Asserts the JWT isn't allowed (blacklisted) by the default blacklist driver:
 $validator->assertNotAllowed();
 ```
 
@@ -223,9 +224,9 @@ $validator->assertNotAllowed();
 Asserts that the JWT passes or doesn't pass the specified ``$callback``. The ``$callback`` accepts the ``JWT`` instance and returns either true (meaning it passes) or false (meaning it fails).
 
 ```php
-use LittleApps\LittleJWT\JWT\JWT;
+use LittleApps\LittleJWT\JWT\JsonWebToken;
 
-$callback = function (JWT $jwt) {
+$callback = function (JsonWebToken $jwt) {
     if ($jwt->getPayload()->count() == 1)
         return true;
     else
@@ -244,10 +245,10 @@ $validator->assertCustomFails($callback);
 Similiar to ``assertCustomPasses`` and ``assertCustomFails``, except for perform checks on specific claims with ``$key``. The ``$callback`` recieves the claim ``$value``, the claim ``$key``, and the associated JWT instance as ``$jwt``. If the claim is in the header, specify ``$inHeader`` as true.
 
 ```php
-use LittleApps\LittleJWT\JWT\JWT;
+use LittleApps\LittleJWT\JWT\JsonWebToken;
 
 $key = 'abc';
-$callback = function($value, string $key, JWT $jwt) {
+$callback = function($value, string $key, JsonWebToken $jwt) {
     // Checks the $value is all lowercase.
     if (strtolower($value) == $value)
         return true;
