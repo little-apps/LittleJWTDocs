@@ -2,8 +2,8 @@
 title: Guard
 description: 
 published: true
-date: 2022-09-22T06:26:31.202Z
-tags: guard, laravel, authentication, adapters, config, configuration, custom adapter, auth.php, user provider, fingerprint, generic
+date: 2023-05-15T06:14:37.191Z
+tags: adapters, auth.php, authentication, config, configuration, custom adapter, fingerprint, generic, guard, laravel, user provider
 editor: markdown
 dateCreated: 2022-02-05T06:58:51.801Z
 ---
@@ -302,6 +302,7 @@ Create a class that implements the ``GuardAdapter`` interface and implement the 
 ```php
 use LittleApps\LittleJWT\Contracts\GuardAdapter;
 use LittleApps\LittleJWT\LittleJWT;
+use LittleApps\LittleJWT\JWT\JsonWebToken;
 
 class MyAdapter implements GuardAdapter {
     /**
@@ -335,9 +336,9 @@ class MyAdapter implements GuardAdapter {
      * This does NOT check if the JWT is valid.
      *
      * @param string $token
-     * @return JWT JWT instance or null if unable to be parsed.
+     * @return JsonWebToken JWT instance or null if unable to be parsed.
      */
-    public function parseToken(string $token)
+    public function parse(string $token)
     {
         // ...
     }
@@ -345,10 +346,10 @@ class MyAdapter implements GuardAdapter {
     /**
      * Validate the JWT.
      *
-     * @param JWT $jwt
+     * @param JsonWebToken $jwt
      * @return bool True if JWT is validated.
      */
-    public function validateJwt(JWT $jwt)
+    public function validate(JsonWebToken $jwt)
     {
         // ...
     }
@@ -357,10 +358,10 @@ class MyAdapter implements GuardAdapter {
      * Gets a user from the JWT
      *
      * @param UserProvider $provider
-     * @param JWT $jwt
+     * @param JsonWebToken $jwt
      * @return Authenticatable
      */
-    public function getUserFromJwt(UserProvider $provider, JWT $jwt)
+    public function getUserFromJwt(UserProvider $provider, JsonWebToken $jwt)
     {
         // ...
     }
