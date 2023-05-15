@@ -2,39 +2,42 @@
 title: Creating
 description: 
 published: true
-date: 2022-09-22T06:47:01.701Z
-tags: claims, creating, token, jwt, callback, create, createjwt, createtoken, anonymous function, buildable, generating
+date: 2023-05-15T05:42:22.004Z
+tags: anonymous function, buildable, callback, claims, create, createjwt, createtoken, creating, generating, jwt, token
 editor: markdown
 dateCreated: 2022-02-05T06:58:00.402Z
 ---
 
-# Creating a Token
-
-If you want to create a token, use the ``createToken`` method:
-
-```php
-use LittleApps\LittleJWT\Facades\LittleJWT;
-use LittleApps\LittleJWT\Build\Builder;
-
-$token = LittleJWT::createToken(function (Builder $builder) {
-    // ...
-});
-```
-
 # Creating a JWT
 
-If you want to create a JWT instance, use the ``createJWT`` method:
+If you want to create a JWT instance, call the ``create`` method:
 
 ```php
 use LittleApps\LittleJWT\Facades\LittleJWT;
 use LittleApps\LittleJWT\Build\Builder;
 
-$jwt = LittleJWT::createJWT(function (Builder $builder) {
+$jwt = LittleJWT::create(function (Builder $builder) {
     // ...
 });
 ```
 
  > More information on the JWT instance can be found under [The JWT](https://github.com/little-apps/LittleJWT/wiki/The-JWT) page.
+ 
+## Creating a Token
+
+If you want to create a token, simply cast the JWT instance to a string:
+
+```php
+use LittleApps\LittleJWT\Facades\LittleJWT;
+use LittleApps\LittleJWT\Build\Builder;
+
+$jwt = LittleJWT::create(function (Builder $builder) {
+    // ...
+});
+
+$token = (string) $jwt;
+// $token = "ey...";
+```
 
 # Parameters
 
@@ -48,14 +51,12 @@ The following demonstrates passing an anonymous function to create a token:
 use LittleApps\LittleJWT\Facades\LittleJWT;
 use LittleApps\LittleJWT\Build\Builder;
 
-$token = LittleJWT::createToken(function (Builder $builder) {
+$jwt = LittleJWT::create(function (Builder $builder) {
     $builder
         ->abc('def', true)
         ->ghi('klm')
         ->nop('qrs', false);
 });
-
-// $token = "ey...";
 ```
 
  > See [Buildables](/buildables) for more information on utilizing buildables as an alternative to anonymous functions.
@@ -69,17 +70,17 @@ use LittleApps\LittleJWT\Facades\LittleJWT;
 use LittleApps\LittleJWT\Build\Builder;
 
 // Applies the default builder
-$defaultToken = LittleJWT::createToken(function (Builder $builder) {
+$jwt = LittleJWT::create(function (Builder $builder) {
     /* ... */
 }, true);
 
 // Also applies the default builder
-$defaultToken = LittleJWT::createToken(function (Builder $builder) {
+$jwt = LittleJWT::create(function (Builder $builder) {
     /* ... */
 });
 
 // Ignores the default builder
-$customToken = LittleJWT::createToken(function (Builder $builder) {
+$jwt = LittleJWT::create(function (Builder $builder) {
     /* ... */
 }, false);
 ```
