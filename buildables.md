@@ -2,13 +2,13 @@
 title: Buildables
 description: 
 published: true
-date: 2023-04-27T08:09:40.564Z
-tags: build, buildable, config, configuration, createtoken, creating, littlejwt.php, resolving, custom buildable, default buildable
+date: 2023-05-15T06:24:58.011Z
+tags: build, buildable, config, configuration, createtoken, creating, custom buildable, default buildable, littlejwt.php, resolving
 editor: markdown
 dateCreated: 2022-02-13T09:05:19.044Z
 ---
 
-Rather than passing an anonymous function to either the ``createToken()`` or ``createJWT()`` methods, you could create an instance of an [invokable class](https://www.php.net/manual/en/language.oop5.magic.php#object.invoke) to re-use the claims:
+Rather than passing an anonymous function to the ``create()`` method, you could create an instance of an [invokable class](https://www.php.net/manual/en/language.oop5.magic.php#object.invoke) to re-use the claims:
 
 ```php
 use LittleApps\LittleJWT\Facades\LittleJWT;
@@ -16,11 +16,9 @@ use LittleApps\LittleJWT\Facades\LittleJWT;
 // Create invokable instance directly:
 $buildable = new MyBuildable();
 
-// Pass $buildable to createToken method:
-$token = LittleJWT::createToken($buildable);
+// Pass $buildable to the create method:
+$jwt = LittleJWT::create($buildable);
 ```
-
- > Additional [mutators](https://docs.getlittlejwt.com/en/mutating-claims#h-2-buildable-class) can be included with the buildable instance.
 
 # Configuration
 
@@ -82,18 +80,14 @@ class MyBuildable
 }
 ```
 
-Send the ``$buildable`` instance to either the ``createToken()`` or ``createJWT()`` method:
+Send the ``$buildable`` instance to the ``create()`` method:
 
 ```php
 use LittleApps\LittleJWT\Facades\LittleJWT;
 
 $buildable = new MyBuildable();
 
-// Option 1
-$token = LittleJWT::createToken($buildable);
-
-// Option 2
-$jwt = LittleJWT::createJWT($buildable);
+$jwt = LittleJWT::create($buildable);
 ```
 
 ## Configuration File
@@ -163,7 +157,7 @@ use Illuminate\Support\Facades\App;
 
 $buildable = App::make('littlejwt.buildables.custom');
 
-$token = LittleJWT::createToken($buildable);
+$jwt = LittleJWT::create($buildable);
 ```
 
 # Changing The Default Buildable
