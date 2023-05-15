@@ -2,70 +2,52 @@
 title: Building
 description: 
 published: true
-date: 2022-02-21T05:26:28.099Z
-tags: buildable, claims, jwt, build, building, buildjwt
+date: 2023-05-15T05:56:49.861Z
+tags: build, buildable, building, buildjwt, claims, jwt
 editor: markdown
 dateCreated: 2022-02-05T06:53:18.364Z
 ---
 
-The `buildJWT` method in the LittleJWT facade allows for a JWT to be built using an instance of the `LittleApps\LittleJWT\Build\Build` class:
+If you want more control over the JWT build process, use the the ``build`` method to get a `LittleApps\LittleJWT\Build\Build` instance:
 
 ```php
 use LittleApps\LittleJWT\Facades\LittleJWT;
 
-$build = LittleJWT::buildJWT();
+$build = LittleJWT::build();
 ```
 
-Claims can be added similar to how claims are added to the `LittleApps\LittleJWT\Build\Builder` instance. The `Build` instance does not have any claims automatically added to it.
+The `Build` instance does not have any buildable callbacks when it is first created. Buildable callbacks can be added to specify claims for the JWT:
 
 ```php
-use LittleApps\LittleJWT\Facades\LittleJWT;
-
-$build = LittleJWT::buildJWT();
-
-// Method overloading
-$build->abc('def');
-
-// Property overloading
-$build->abc = 'def';
-
-// Defined methods
-$build->addClaim('abc', 'def');
-```
-
-Use the `build()` method create a JWT:
-
-```php
-use LittleApps\LittleJWT\Facades\LittleJWT;
-
-$build = LittleJWT::buildJWT();
+use LittleApps\LittleJWT\Build\Builder;
 
 // ...
 
-$jwt = $build->build();
+$build->passBuilderThru(function (Builder $builder) {
+  // Method overloading
+  $build->abc('def');
+
+  // Property overloading
+  $build->abc = 'def';
+
+  // Defined methods
+  $build->addClaim('abc', 'def');
+});
 ```
 
-Use chaining to build a JWT in a single line of code:
+Use the `build()` method create a JWT. This does **not** sign the JWT.
 
 ```php
-use LittleApps\LittleJWT\Facades\LittleJWT;
+// ...
 
-$jwt =
-    LittleJWT::buildJWT()
-      ->abc('def', true)
-      ->ghi('lmn')
-        ->build();
+$unsigned = $build->build();
 ```
 
-A `LittleApps\LittleJWT\Contracts\Buildable` implementation can be applied to the `Build` instance using the `passBuilderThru()` method:
+Use the ``sign`` method to sign the JWT:
 
 ```php
-use LittleApps\LittleJWT\Facades\LittleJWT;
+// ...
 
-$buildable = /* ... */;
-
-$jwt =
-    LittleJWT::buildJWT()
-      ->passBuilderThru($buildable)
-        ->build();
+$unsigned = $build->build();
+$signed = $unsigned->sign();
 ```
