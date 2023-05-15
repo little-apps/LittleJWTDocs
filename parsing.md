@@ -2,20 +2,20 @@
 title: Parsing
 description: 
 published: true
-date: 2022-02-21T05:44:50.088Z
-tags: jwt, token, parsing, parsetoken
+date: 2023-05-15T05:58:49.551Z
+tags: jwt, parsetoken, parsing, token
 editor: markdown
 dateCreated: 2022-02-05T07:00:43.011Z
 ---
 
-A token can be parsed from a string and transformed into a ``LittleApps\LittleJWT\JWT\JWT`` instance. If the token cannot be parsed, ``parseToken()`` will return ``null``. This means the token could not be parsed, not that it couldn't be validated. More information the JWT instance can be found in [The JWT](/the-jwt) documentation.
+A token can be parsed from a string and transformed into a JsonWebToken instance. If the token cannot be parsed, the method will return ``null``. A parsed JWT does not mean that is a valid JWT. More information the JWT instance can be found in [The JWT](/the-jwt) documentation.
 
 ```php
 use LittleApps\LittleJWT\Facades\LittleJWT;
 
-$token = "...";
+$token = "ey...";
 
-$jwt = LittleJWT::parseToken($token);
+$jwt = LittleJWT::parse($token);
 
 if (! is_null($jwt)) {
     // The JWT was parsed.
