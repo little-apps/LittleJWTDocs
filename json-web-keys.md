@@ -2,13 +2,13 @@
 title: JSON Web Keys (JWKs)
 description: 
 published: true
-date: 2022-12-01T05:41:42.769Z
-tags: jwk, json web key, default jwk, custom jwk, littlejwt instance
+date: 2023-05-15T06:48:05.547Z
+tags: custom jwk, default jwk, json web key, jwk, littlejwt instance
 editor: markdown
 dateCreated: 2022-02-05T06:59:37.761Z
 ---
 
-Signing and verifying JSON Web Tokens (JWTs) is done using a JSON Web Key (JWK). Each ``LittleApps\LittleJWT\LittleJWT`` instance has a different JWK.
+Signing and verifying JSON Web Tokens (JWTs) is done using a JSON Web Key (JWK). Each ``LittleApps\LittleJWT\LittleJWT`` handler can have a different JWK.
 
 # Default JWK
 
@@ -66,8 +66,8 @@ To build or validate a JWT with the default JWK, use either the Facade or the Ap
 ```php
 use LittleApps\LittleJWT\Facades\LittleJWT;
 
-$token = LittleJWT::createToken(/* ... */);
-$passes = LittleJWT::validateJWT(/* ... */);
+$jwt = LittleJWT::create(/* ... */);
+$passes = LittleJWT::validate(/* ... */);
 ```
 
 ### Application Container:
@@ -78,28 +78,67 @@ use LittleApps\LittleJWT\LittleJWT;
 
 // Using the app() function:
 
-$token = app('littlejwt')->createToken(/* ... */);
-$passes = app(LittleJWT::class)->validateJWT(/* ... */);
+$jwt = app('littlejwt')->create(/* ... */);
+$passes = app(LittleJWT::class)->validate(/* ... */);
 
 // Using the App facade:
-$token = App::make('littlejwt')->createToken(/* ... */);
-$passes = App::make(LittleJWT::class)->validateJWT(/* ... */);
+
+$jwt = App::make('littlejwt')->create(/* ... */);
+$passes = App::make(LittleJWT::class)->validate(/* ... */);
 ```
 
-# Custom JWK
+# Custom JWKs
 
-To build or validate a JWT using a different key, first you must create a JWK instance. Little JWT is built off of the PHP JWT Framework, which has [documentation on creating JWK objects](https://web-token.spomky-labs.com/the-components/key-jwk-and-key-set-jwkset/key-management).
+To build or validate a JWT using a different key, first you must create a JsonWebKey instance. Little JWT is built off of the PHP JWT Framework (which has [documentation on creating JWK objects](https://web-token.spomky-labs.com/the-components/key-jwk-and-key-set-jwkset/key-management)), however, it's recommended to use the provided ``Keyable`` factory:
+
+```php
+use LittleApps\LittleJWT\Contracts\Keyable;
+
+$keyable = App::make(Keyable::class);
+
+// 1. Creates a random one-time JWK:
+
+$jwk = $keyable->generateRandomJwk();
+
+// 2. Create a JWK from a secret phrase:
+
+$jwk = $keyable->buildFromSecret(['phrase' => 'littlejwtisgreat']);
+
+// Passing an empty secret phrase is NOT recommended and generates a warning:
+$jwk = $keyable->buildFromSecret(['phrase' => '']);
+
+// Not passing a secret phrase will cause the MissingKeyException exception to be thrown:
+$jwk = $keyable->buildFromSecret([]);
+
+// 3. Create a JWK based on a certificate file:
+
+$jwk = $keyable->buildFromFile(['type' => 'crt', 'path' => '/path/to/cert.crt']);
+
+// 4. Create a JWK based on a PKCS #12 certificate file:
+
+$jwk = $keyable->buildFromFile(['type' => 'p12', 'path' => '/path/to/cert.p12', 'secret' => 'abcd']);
+
+// 5. Create a JWK based on a PEM key file:
+
+$jwk = $keyable->buildFromFile(['type' => 'pem', 'path' => '/path/to/cert.pem', 'secret' => 'abcd']);
+
+```
+
+If you opt to use the PHP JWT Framework's factory, make sure the 'alg' (algorithm) is specified and it is transformed into a ``JsonWebKey`` instance:
 
 ```php
 use Jose\Component\KeyManagement\JWKFactory;
+use LittleApps\LittleJWT\JWK\JsonWebKey;
 
-$jwk = JWKFactory::createFromSecret(
+$baseJwk = JWKFactory::createFromSecret(
     'changethis',          // The shared secret
-    [                      // Optional additional members
-        'alg' => 'HS256',
+    [                      
+        'alg' => 'HS256',  // Needs to be specified.
         'use' => 'sig'
     ]
 );
+
+$jwk = JsonWebKey::createFromBase($baseJwk);
 ```
 
 Then, create a new ``LittleJWT`` instance for building and validating JWTs with that JWK:
@@ -107,8 +146,8 @@ Then, create a new ``LittleJWT`` instance for building and validating JWTs with 
 ```php
 use LittleApps\LittleJWT\Facades\LittleJWT;
 
-$littleJwt = LittleJWT::withJwk($jwk);
+$handler = LittleJWT::withJwk($jwk);
 
-$token = $littleJwt->createToken(/* ... */);
-$passes = $littleJwt->validateJWT(/* ... */);
+$token = $handler->create(/* ... */);
+$passes = $handler->validate(/* ... */);
 ```
