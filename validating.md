@@ -2,7 +2,7 @@
 title: Validating
 description: 
 published: true
-date: 2023-05-15T06:09:58.394Z
+date: 2023-05-15T06:11:29.926Z
 tags: anonymous function, callback, checks, jwt, rules, token, validatable, validating
 editor: markdown
 dateCreated: 2022-02-05T07:04:17.541Z
@@ -23,7 +23,7 @@ $passes = LittleJWT::validate($jwt, function (Validator $validator) {
 
 If it's a token, it will need to be transformed to a JWT instance first. 
 
-You can transform it with ``parse`` first, and then send it to the ``validate`` method:
+You can transform it with the ``parse`` method first, and then send it to the ``validate`` method:
 
 ```php
 use LittleApps\LittleJWT\Facades\LittleJWT;
@@ -48,7 +48,7 @@ if (! is_null($jwt)) {
 }
 ```
 
-Or, you can use the ``validateToken`` to do the parsing and validating:
+Or, you can use the ``validateToken`` method to do the parsing and validating:
 
 ```php
 use LittleApps\LittleJWT\Facades\LittleJWT;
