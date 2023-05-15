@@ -2,8 +2,8 @@
 title: Blacklist Manager
 description: 
 published: true
-date: 2022-11-07T00:17:18.195Z
-tags: blacklist, database, cache, manager
+date: 2023-05-15T06:22:03.039Z
+tags: blacklist, cache, database, manager
 editor: markdown
 dateCreated: 2022-08-21T08:16:03.511Z
 ---
@@ -29,7 +29,7 @@ Use the ``Blacklist`` facade to access the default driver. The following demonst
 use LittleApps\LittleJWT\Facades\LittleJWT;
 use LittleApps\LittleJWT\Facades\Blacklist;
 
-// The current JWT instance can be retrieved from the \Illuminate\Http\Request object.
+// The current JsonWebToken instance can be retrieved from the \Illuminate\Http\Request object.
 $jwt = $request->getJwt();
 
 $blacklisted = Blacklist::isBlacklisted($jwt);
@@ -118,17 +118,17 @@ If you want to create your own blacklist driver, you will need to create a class
 namespace App\Components\LittleJWT;
 
 use LittleApps\LittleJWT\Contracts\BlacklistDriver;
-use LittleApps\LittleJWT\JWT\JWT;
+use LittleApps\LittleJWT\JWT\JsonWebToken;
 
 class MyCustomDriver implements BlacklistDriver
 {
     /**
      * Checks if JWT is blacklisted.
      *
-     * @param JWT $jwt
+     * @param JsonWebToken $jwt
      * @return bool True if blacklisted.
      */
-    public function isBlacklisted(JWT $jwt)
+    public function isBlacklisted(JsonWebToken $jwt)
     {
         // ...
     }
@@ -136,11 +136,11 @@ class MyCustomDriver implements BlacklistDriver
     /**
      * Blacklists a JWT.
      *
-     * @param JWT $jwt
+     * @param JsonWebToken $jwt
      * @param int $ttl Length of time (in seconds) a JWT is blacklisted (0 means forever). If negative, the default TTL is used. (default: -1)
      * @return $this
      */
-    public function blacklist(JWT $jwt, $ttl = -1)
+    public function blacklist(JsonWebToken $jwt, $ttl = -1)
     {
         // ...
         return $this;
@@ -163,7 +163,7 @@ The ``JWTHelpers`` trait provides a method to determine a unique ID from a JWT. 
 
 ```php
 use LittleApps\LittleJWT\Contracts\BlacklistDriver;
-use LittleApps\LittleJWT\JWT\JWT;
+use LittleApps\LittleJWT\JWT\JsonWebToken;
 use LittleApps\LittleJWT\Concerns\JWTHelpers;
 
 class MyCustomDriver implements BlacklistDriver
@@ -173,10 +173,10 @@ class MyCustomDriver implements BlacklistDriver
     /**
      * Checks if JWT is blacklisted.
      *
-     * @param JWT $jwt
+     * @param JsonWebToken $jwt
      * @return bool True if blacklisted.
      */
-    public function isBlacklisted(JWT $jwt)
+    public function isBlacklisted(JsonWebToken $jwt)
     {
         $id = $this->getUniqueId($jwt);
         
