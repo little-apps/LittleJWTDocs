@@ -2,7 +2,7 @@
 title: Validating
 description: 
 published: true
-date: 2023-05-15T06:11:29.926Z
+date: 2023-05-16T04:02:27.261Z
 tags: anonymous function, callback, checks, jwt, rules, token, validatable, validating
 editor: markdown
 dateCreated: 2022-02-05T07:04:17.541Z
@@ -10,20 +10,20 @@ dateCreated: 2022-02-05T07:04:17.541Z
 
 Validating allows for a JWT to be sent through a series of checks (such as that it's not expired and the signature matches) before the JWT is used for other things. The ``LittleJWT`` [facade](https://laravel.com/docs/8.x/facades) provides methods to validate tokens. 
 
-When validating a [JWT](/the-jwt) instance, use the ``validate`` method.
+When validating a [JWT](/the-jwt) instance, use the ``validate`` method which returns an object with the JWT and the result of the validation:
 
 ```php
 use LittleApps\LittleJWT\Facades\LittleJWT;
 use LittleApps\LittleJWT\Validation\Validator;
 
-$passes = LittleJWT::validate($jwt, function (Validator $validator) {
+$result = LittleJWT::validate($jwt, function (Validator $validator) {
   // ...
 });
+
+$passes = $result->passes();
 ```
 
-If it's a token, it will need to be transformed to a JWT instance first. 
-
-You can transform it with the ``parse`` method first, and then send it to the ``validate`` method:
+If it's a token, it will need to be transformed to a JWT instance first. You can transform it with the ``parse`` method first, and then send it to the ``validate`` method:
 
 ```php
 use LittleApps\LittleJWT\Facades\LittleJWT;
@@ -34,11 +34,11 @@ $token = 'ey...';
 $jwt = LittleJWT::parse($token);
 
 if (! is_null($jwt)) {
-  $passes = LittleJWT::validate($jwt, function (Validator $validator) {
+  $result = LittleJWT::validate($jwt, function (Validator $validator) {
     // ...
   });
   
-  if ($passes) {
+  if ($result->passes()) {
     // Token is valid.
   } else {
     // Token is invalid.
@@ -56,6 +56,7 @@ use LittleApps\LittleJWT\Validation\Validator;
 
 $token = 'ey...';
 
+// Unlike validate, the validateToken method returns a boolean.
 $passes = LittleJWT::validateToken($token, function (Validator $validator) {
   // ...
 });
@@ -77,7 +78,7 @@ The following demonstrates passing an anonymous function to validate a token:
 use LittleApps\LittleJWT\Facades\LittleJWT;
 use LittleApps\LittleJWT\Validation\Validator;
 
-$passes = LittleJWT::validate($jwt, function (Validator $validator) {
+$result = LittleJWT::validate($jwt, function (Validator $validator) {
     $validator
         ->valid()                          // Checks the signature is valid.
         ->equals('abc', 'def', true, true) // Checks claim 'abc' in header equals 'def'
@@ -97,7 +98,7 @@ use LittleApps\LittleJWT\Facades\LittleJWT;
 use LittleApps\LittleJWT\Validation\Validator;
 
 // Applies the default validatable
-$passes = LittleJWT::validate($jwt, function (Validator $validator) {
+$result = LittleJWT::validate($jwt, function (Validator $validator) {
     $validator
         // All rules here are checked before the default validatable.
         ->contains(['foo'])
@@ -105,12 +106,12 @@ $passes = LittleJWT::validate($jwt, function (Validator $validator) {
 }, true);
 
 // Also applies the default validatable
-$passes = LittleJWT::validate($jwt, function (Validator $validator) {
+$result = LittleJWT::validate($jwt, function (Validator $validator) {
     /* ... */
 });
 
 // Ignores the default validatable
-$passes = LittleJWT::validate($jwt, function (Validator $validator) {
+$result = LittleJWT::validate($jwt, function (Validator $validator) {
     /* ... */
 }, false);
 ```
