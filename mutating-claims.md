@@ -2,7 +2,7 @@
 title: Mutating Claims
 description: 
 published: true
-date: 2023-05-16T07:11:08.607Z
+date: 2023-05-16T07:12:00.217Z
 tags: claims, dates, encryption, mutating, mutators, numbers, objects, parsing
 editor: markdown
 dateCreated: 2022-02-05T07:00:11.445Z
@@ -304,3 +304,4 @@ LittleJWT::mutate(function (Mutators $mutators) {
 });
 ```
 
+# Custom Mutators
