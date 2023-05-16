@@ -2,7 +2,7 @@
 title: Mutating Claims
 description: 
 published: true
-date: 2023-05-16T07:12:00.217Z
+date: 2023-05-16T07:17:00.873Z
 tags: claims, dates, encryption, mutating, mutators, numbers, objects, parsing
 editor: markdown
 dateCreated: 2022-02-05T07:00:11.445Z
@@ -123,6 +123,103 @@ LittleJWT::mutate(function (Mutators $mutators) {
 // The 'bar' claim mutator is 'date'.
 ```
 
+
+
+# Available Mutators
+
+A list of possible mutators is below:
+
+ * ``array``
+ * ``bool``
+ * ``custom_datetime``
+ * ``date``
+ * ``datetime``
+ * ``decimal``
+ * ``encrypted``
+ * ``double``
+ * ``float``
+ * ``real``
+ * ``int``
+ * ``json``
+ * ``object``
+ * ``timestamp``
+ * ``model``
+
+## Dates
+
+Claim values can be mutated as a date using the ``custom_datetime``, ``date``, ``datetime``, and ``timestamp`` mutators.
+
+Each mutator is different in the format it uses in the JWT:
+
+```php
+use LittleApps\LittleJWT\Facades\LittleJWT;
+use LittleApps\LittleJWT\Mutate\Mutators;
+
+LittleJWT::mutate(function (Mutators $mutators) {
+  $mutators
+    /**
+     * Serializes the date/time in the specified format.
+     * See https://www.php.net/manual/en/datetime.format.php for possible formats.
+     */
+    ->a('custom_datetime:Y-m-d')
+    /**
+     * Serializes the date/time in the 'Y-m-d' format.
+     */
+    ->b('date')
+    /**
+     * Serializes the date/time in the ISO8601 format.
+     */
+    ->c('datetime')
+    /**
+     * Serializes the date/time as Unix timestamp (in seconds).
+     */
+    ->d('timestamp');
+});
+```
+
+## Numbers
+
+Claim values can be mutated to various number formats.
+
+```php
+use LittleApps\LittleJWT\Facades\LittleJWT;
+use LittleApps\LittleJWT\Mutate\Mutators;
+
+LittleJWT::mutate(function (Mutators $mutators) {
+  $mutators
+    ->a('double') // Can be 'double', 'float', or 'real'.
+    ->b('decimal:2'); // Serializes the claim value with 2 decimals.
+});
+```
+
+The ``double``, ``float``, and ``real`` mutators perform the same. If the value is positive or negative infinite, it is serialized as ``'Infinity'`` or ``'-Infinity'`` (respectively). If the value is not a number (NaN), it is serialized as ``'NaN'``. Otherwise, the number is serialized by casting it to a string.
+
+The ``decimal`` mutator uses PHP's built-in [``number_format``](https://www.php.net/number_format) function to serialize the claim value as a string with a specified number of decimals. If no number of decimals is specified, no decimals are included.
+
+## Encrypting & Decrypting
+
+Claims can be encrypted when serialized and decrypted when deserialized using the ``encrypted`` mutator. The claim value will be encrypted and decrypted using [Laravel's built-in encryption service](https://laravel.com/docs/8.x/encryption).
+
+## Objects
+
+The ``json`` and ``object`` mutators use PHP's built-in [``json_encode``](https://www.php.net/manual/en/function.json-encode.php) function to serialize the claim value. The difference between them is when deserialized, the ``json`` mutator mutates it to an associative array, while the ``object`` mutator mutates it to an ``stdClass`` instance.
+
+## Model
+
+The ``model`` mutator will transform a ``Model`` instance into the primary key value (when serializing) and the primary key value back to the ``Model`` instance (when unserializing):
+
+```php
+use LittleApps\LittleJWT\Facades\LittleJWT;
+use LittleApps\LittleJWT\Mutate\Mutators;
+use App\Models\User;
+
+LittleJWT::mutate(function (Mutators $mutators) {
+  $mutators->sub(sprintf('model:%s', User::class)); // The Model class needs to be specified.
+});
+```
+
+# Custom Mutators
+
 # Default Mutators
 
 Default mutators are automatically applied when on top of any other mutators. The default mutators are specified in the ``config/littlejwt.php`` file:
@@ -138,8 +235,8 @@ return [
       'header' => [],
       'payload' => [
         'iat' => 'timestamp',
-				'nbf' => 'timestamp',
-				'exp' => 'timestamp'
+        'nbf' => 'timestamp',
+        'exp' => 'timestamp'
       ]
     ],
   ]
@@ -188,120 +285,3 @@ LittleJWT::withMutate()->mutate(function (Mutators $mutators) { }); // Works!
 // Without mutate:
 LittleJWT::withoutMutate()->mutate(function (Mutators $mutators) { }); // Doesn't work!
 ```
-
-# Available Mutators
-
-A list of possible mutators is below:
-
- * ``array``
- * ``bool``
- * ``custom_datetime``
- * ``date``
- * ``datetime``
- * ``decimal``
- * ``encrypted``
- * ``double``
- * ``float``
- * ``real``
- * ``int``
- * ``json``
- * ``object``
- * ``timestamp``
- * ``model``
-
-## Dates
-
-Claim values can be mutated as a date using the ``custom_datetime``, ``date``, ``datetime``, and ``timestamp`` mutators.
-
-Each mutator is different in the format it uses in the JWT:
-
-```php
-return [
-    'builder' => [
-        /**
-         * Mutators to use for claims in the header and payload.
-         */
-        'mutators' => [
-            'header' => [],
-            'payload' => [
-                /**
-                 * Serializes the date/time in the specified format.
-                 * See https://www.php.net/manual/en/datetime.format.php for possible formats.
-                 */
-                'iat' => 'custom_datetime:Y-m-d',
-
-                /**
-                 * Serializes the date/time in the 'Y-m-d' format.
-                 */
-                'iat' => 'date',
-
-                /**
-                 * Serializes the date/time in the ISO8601 format.
-                 */
-                'iat' => 'datetime',
-
-                /**
-                 * Serializes the date/time as Unix timestamp.
-                 */
-                'iat' => 'timestamp',
-            ]
-        ],
-    ],
-];
-```
-
-## Numbers
-
-Claim values can be mutated to various number formats.
-
-```php
-return [
-    'builder' => [
-        /**
-         * Mutators to use for claims in the header and payload.
-         */
-        'mutators' => [
-            'header' => [],
-            'payload' => [
-                /**
-                 * Can be 'double', 'float', or 'real'.
-                 */
-                'a' => 'double',
-
-                /**
-                 * Serializes the claim value with 2 decimals.
-                 */
-                'b' => 'decimal:2',
-            ]
-        ],
-    ],
-];
-```
-
-The ``double``, ``float``, and ``real`` mutators perform the same. If the value is positive or negative infinite, it is serialized as ``'Infinity'`` or ``'-Infinity'`` (respectively). If the value is not a number (NaN), it is serialized as ``'NaN'``. Otherwise, the number is serialized by casting it to a string.
-
-The ``decimal`` mutator uses PHP's built-in [``number_format``](https://www.php.net/number_format) function to serialize the claim value as a string with a specified number of decimals. If no number of decimals is specified, no decimals are included.
-
-## Encrypting & Decrypting
-
-Claims can be encrypted when serialized and decrypted when deserialized using the ``encrypted`` mutator. The claim value will be encrypted and decrypted using [Laravel's built-in encryption service](https://laravel.com/docs/8.x/encryption).
-
-## Objects
-
-The ``json`` and ``object`` mutators use PHP's built-in [``json_encode``](https://www.php.net/manual/en/function.json-encode.php) function to serialize the claim value. The difference between them is when deserialized, the ``json`` mutator mutates it to an associative array, while the ``object`` mutator mutates it to an ``stdClass`` instance.
-
-## Model
-
-The ``model`` mutator will transform a ``Model`` instance into the primary key value (when serializing) and the primary key value back to the ``Model`` instance (when unserializing):
-
-```php
-use LittleApps\LittleJWT\Facades\LittleJWT;
-use LittleApps\LittleJWT\Mutate\Mutators;
-use App\Models\User;
-
-LittleJWT::mutate(function (Mutators $mutators) {
-  $mutators->sub(sprintf('model:%s', User::class)); // The Model class needs to be specified.
-});
-```
-
-# Custom Mutators
