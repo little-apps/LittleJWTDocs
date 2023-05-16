@@ -2,21 +2,130 @@
 title: Mutating Claims
 description: 
 published: true
-date: 2023-05-02T06:24:45.486Z
-tags: claims, parsing, mutating, mutators, dates, numbers, encryption, objects
+date: 2023-05-16T07:11:08.607Z
+tags: claims, dates, encryption, mutating, mutators, numbers, objects, parsing
 editor: markdown
 dateCreated: 2022-02-05T07:00:11.445Z
 ---
 
 Claim values can be mutated to an appropriate data type. The data type to mutate to depends on what is set for the claim key. If no mutation for the claim key is set, the claim value is whatever it was decoded to by ``LittleApps\LittleJWT\Utils\JsonEncoder`` (could be a string, array, number, etc.). 
 
-# Setting Mutators
+# Specifying Mutators
 
-Mutators can be specified in one of the following ways:
+Mutating is split into serializing and unserializing. Serializing is performed before a JWT is built, while unserializing is performed after a token is parsed.
 
-## 1. Configuration File
+Before the JWT is serialized or unserialized, the mutators must be specified.
 
-In the ``config/littlejwt.php`` file, set the mutator to use for the claim key in either the 'header' or 'payload' array. The claims specified will be mutated when the JWT is both created and parsed.
+Use the ``mutate`` method to specify the mutators and they will be applied to any building, validating, etc. done after:
+
+```php
+use LittleApps\LittleJWT\Facades\LittleJWT;
+use LittleApps\LittleJWT\Mutate\Mutators;
+
+LittleJWT::mutate(function (Mutators $mutators) {
+  $mutators
+    ->foo('date');
+});
+```
+
+The following demonstrates serializing, building, and signing a JWT:
+
+```php
+use LittleApps\LittleJWT\Facades\LittleJWT;
+use LittleApps\LittleJWT\Mutate\Mutators;
+use LittleApps\LittleJWT\Build\Builder;
+use LittleApps\LittleJWT\Validation\Validator;
+
+$serialized = LittleJWT::mutate(function (Mutators $mutators) {
+  $mutators
+    ->foo('date');
+})->create(function (Builder $builder) {
+  $builder
+    ->foo(1684215857);
+});
+
+// $serialized has payload claim 'foo' with value '2023-05-16'
+```
+
+The following demonstrates validating and unserializing a JWT:
+
+```php
+use LittleApps\LittleJWT\Facades\LittleJWT;
+use LittleApps\LittleJWT\Mutate\Mutators;
+use LittleApps\LittleJWT\Validation\Validator;
+
+// Validating:
+$result = LittleJWT::mutate(function (Mutators $mutators) {
+  $mutators
+    ->foo('date');
+})->validate($serialized, function (Validator $validator) {
+  $validator
+    ->valid();
+});
+
+$unserialized = $result->unserialize();
+
+// $unserialized has payload claim 'foo' with value a Carbon instance (representing '2023-05-16')
+```
+
+If you want to serialize a JWT (without signing it) or unserialize a JWT (without validating it), you can call the ``serialize`` or ``unserialize`` methods instead:
+
+```php
+use LittleApps\LittleJWT\Facades\LittleJWT;
+use LittleApps\LittleJWT\Mutate\Mutators;
+
+// Serializing:
+$serialized = LittleJWT::mutate(function (Mutators $mutators) {
+  $mutators
+    ->foo('date');
+})->serialize($jwt);
+
+// Unserializing:
+$unserialized = LittleJWT::mutate(function (Mutators $mutators) {
+  $mutators
+    ->foo('date');
+})->unserialize($serialized);
+```
+
+## Limitations
+
+Mutations are only applied to chained method after the ``mutate`` method call. Existing mutations aren't persisted with the main LittleJWT instance:
+
+```php
+use LittleApps\LittleJWT\Facades\LittleJWT;
+use LittleApps\LittleJWT\Mutate\Mutators;
+
+$serialized = LittleJWT::mutate(function (Mutators $mutators) {
+  $mutators
+    ->foo('date');
+})->serialize($jwt);
+
+// The mutators set above won't be applied when this JWT is created:
+$jwt = LittleJWT::create();
+```
+
+Additional calls to ``mutate`` can be made after the first ``mutate`` method call. The mutations will be merged, with the later mutations taking precedence:
+
+```php
+use LittleApps\LittleJWT\Facades\LittleJWT;
+use LittleApps\LittleJWT\Mutate\Mutators;
+
+LittleJWT::mutate(function (Mutators $mutators) {
+  $mutators
+    ->foo('date');
+})->mutate(function (Mutators $mutators) {
+  $mutators
+    ->foo('datetime') // Overrides previously set mutator
+    ->bar('date');
+});
+
+// The 'foo' claim mutator is 'datetime'.
+// The 'bar' claim mutator is 'date'.
+```
+
+# Default Mutators
+
+Default mutators are automatically applied when on top of any other mutators. The default mutators are specified in the ``config/littlejwt.php`` file:
 
 ```php
 return [
@@ -38,118 +147,47 @@ return [
 ];
 ```
 
-## 2. Buildables
-
-Add a public method called ``getMutators`` that returns the mutators to use when claims in the header or payload are serialized:
-
-```php
-use LittleApps\LittleJWT\Build\Builder;
-
-class MyBuildable
-{
-    public function getMutators()
-    {
-        return [
-            'header' => [
-                'foo' => 'date',
-            ],
-            'payload' => [
-                'baz' => 'float',
-            ]
-        ];
-    }
-
-    public function __invoke(Builder $builder)
-    {
-        $builder
-            ->foo(time(), true)
-            ->baz(NAN);
-    }
-}
-```
-
-When the JWT is created using the buildable, the claims specified will be mutated:
+The default mutators can be enabled/disabled by calling the ``applyDefaultMutators`` method. You may want to do this in [the boot method of a service provider](https://laravel.com/docs/10.x/providers#the-boot-method), as the mutators will be enabled/disabled for any subsequent serializing/unserializing. If not set, the default mutators are enabled.
 
 ```php
 use LittleApps\LittleJWT\Facades\LittleJWT;
 
-$buildable = new MyBuildable();
+// Enables default mutators:
+LittleJWT::applyDefaultMutators(true);
 
-$jwt = LittleJWT::createJWT($buildable);
-
-// $jwt->getHeaders()->foo = '2023-04-27';
-// $jwt->getPayload()->baz = 'NaN';
+// Disables default mutators:
+LittleJWT::applyDefaultMutators(false);
 ```
 
- > If both the configuration and buildable have a mutator set for the same claim key, the mutator specified in the *buildable* will take precedence.
- 
-## 3. Parse Token
+# Enabling and Disabling Mutations
 
-An array of mutators can be passed to the ``parseToken`` method.
+Mutations can be enabled or disabled completely. If disabled, the mutation functionality will not work. You may also want to do this in [the boot method of a service provider](https://laravel.com/docs/10.x/providers#the-boot-method).
 
 ```php
 use LittleApps\LittleJWT\Facades\LittleJWT;
 
-$mutators = [
-  'payload' => [
-    'foo' => 'array',
-  ],
-];
+// Enables mutating:
+LittleJWT::alwaysMutate(true);
 
-//$token = 'ey...';
+LittleJWT::mutate(function (Mutators $mutators) { }); // Works!
 
-$jwt = LittleJWT::parseToken($token, $mutators);
+// Disables mutating:
+LittleJWT::alwaysMutate(false);
 
-// $jwt->getPayload()->foo = [];
+LittleJWT::mutate(function (Mutators $mutators) { }); // Doesn't work!
 ```
 
- > If both the configuration and ``parseToken`` mutators have the same claim key, the mutator passed to ``parseToken`` will take precedence.
- 
-## 4. Validatables
-
-Including mutators in a validatables can be useful when a token needs to be mutated before being validated. This only works with the ``validateToken`` method and not the ``validateJWT`` method (since it expects an already parsed token).
-
-Add a public method called ``getMutators`` that returns the mutators to use when claims in the header or payload are parsed:
-
-```php
-use LittleApps\LittleJWT\Validation\Validator;
-
-class MyValidatable
-{
-    public function getMutators()
-    {
-        return [
-            'header' => [],
-            'payload' => [
-                'foo' => 'array',
-            ]
-        ];
-    }
-
-    public function __invoke(Validator $validator)
-    {
-        $validator
-            // Strictly checks 'foo' claim is empty array.
-            ->equals('foo', [], true);
-    }
-}
-```
-
-When the token is being validated, the mutated claims will be used:
+The ``withMutate`` and ``withoutMutate`` methods can also be used to enable or disable mutations when building, validating, etc.:
 
 ```php
 use LittleApps\LittleJWT\Facades\LittleJWT;
 
-// $token = 'ey...';
+// With mutate:
+LittleJWT::withMutate()->mutate(function (Mutators $mutators) { }); // Works!
 
-$validatable = new MyValidatable();
-
-$valid = LittleJWT::validateToken($token, $validatable);
-
-// $valid = true;
+// Without mutate:
+LittleJWT::withoutMutate()->mutate(function (Mutators $mutators) { }); // Doesn't work!
 ```
-
- > Mutators can also be included in the [Default Validatable](https://docs.getlittlejwt.com/validatables) and will be used anytime the optional third argument for ``validateToken`` is ``true``.
 
 # Available Mutators
 
@@ -169,6 +207,7 @@ A list of possible mutators is below:
  * ``json``
  * ``object``
  * ``timestamp``
+ * ``model``
 
 ## Dates
 
@@ -250,3 +289,18 @@ Claims can be encrypted when serialized and decrypted when deserialized using th
 ## Objects
 
 The ``json`` and ``object`` mutators use PHP's built-in [``json_encode``](https://www.php.net/manual/en/function.json-encode.php) function to serialize the claim value. The difference between them is when deserialized, the ``json`` mutator mutates it to an associative array, while the ``object`` mutator mutates it to an ``stdClass`` instance.
+
+## Model
+
+The ``model`` mutator will transform a ``Model`` instance into the primary key value (when serializing) and the primary key value back to the ``Model`` instance (when unserializing):
+
+```php
+use LittleApps\LittleJWT\Facades\LittleJWT;
+use LittleApps\LittleJWT\Mutate\Mutators;
+use App\Models\User;
+
+LittleJWT::mutate(function (Mutators $mutators) {
+  $mutators->sub(sprintf('model:%s', User::class)); // The Model class needs to be specified.
+});
+```
+
