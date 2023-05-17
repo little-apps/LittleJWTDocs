@@ -1,8 +1,8 @@
 ---
-title: Mutating Claims
+title: Mutating
 description: 
 published: true
-date: 2023-05-16T07:17:00.873Z
+date: 2023-05-17T05:34:32.421Z
 tags: claims, dates, encryption, mutating, mutators, numbers, objects, parsing
 editor: markdown
 dateCreated: 2022-02-05T07:00:11.445Z
@@ -87,22 +87,58 @@ $unserialized = LittleJWT::mutate(function (Mutators $mutators) {
 })->unserialize($serialized);
 ```
 
-## Limitations
-
-Mutations are only applied to chained method after the ``mutate`` method call. Existing mutations aren't persisted with the main LittleJWT instance:
+## Additional Callbacks
+ 
+Each ``mutate`` method call creates a new ``MutateHandler`` instances, meaning existing mutations will not be stored with the main LittleJWT instance:
 
 ```php
 use LittleApps\LittleJWT\Facades\LittleJWT;
 use LittleApps\LittleJWT\Mutate\Mutators;
 
-$serialized = LittleJWT::mutate(function (Mutators $mutators) {
+LittleJWT::mutate(function (Mutators $mutators) {
   $mutators
     ->foo('date');
-})->serialize($jwt);
+});
 
 // The mutators set above won't be applied when this JWT is created:
 $jwt = LittleJWT::create();
 ```
+
+That is, unless you use the ``passMutatorsThru`` method:
+
+```php
+use LittleApps\LittleJWT\Facades\LittleJWT;
+use LittleApps\LittleJWT\Mutate\Mutators;
+
+LittleJWT::passMutatorsThru(function (Mutators $mutators) {
+  $mutators
+    ->foo('date');
+});
+
+// The mutators set above will be applied when this JWT is created:
+$jwt = LittleJWT::create();
+```
+
+You can also use this method to apply mutators to an existing ``MutateHandler`` variable:
+
+```php
+use LittleApps\LittleJWT\Facades\LittleJWT;
+use LittleApps\LittleJWT\Mutate\Mutators;
+
+$handler = LittleJWT::mutate(function (Mutators $mutators) {
+  $mutators
+    ->foo('date');
+});
+
+$handler->passMutatorsThru(function (Mutators $mutators) {
+  $mutators
+    ->bar('datetime');
+});
+
+// The mutators set above will be applied when this JWT is created:
+$jwt = LittleJWT::create();
+```
+
 
 Additional calls to ``mutate`` can be made after the first ``mutate`` method call. The mutations will be merged, with the later mutations taking precedence:
 
@@ -122,8 +158,6 @@ LittleJWT::mutate(function (Mutators $mutators) {
 // The 'foo' claim mutator is 'datetime'.
 // The 'bar' claim mutator is 'date'.
 ```
-
-
 
 # Available Mutators
 
@@ -218,8 +252,6 @@ LittleJWT::mutate(function (Mutators $mutators) {
 });
 ```
 
-# Custom Mutators
-
 # Default Mutators
 
 Default mutators are automatically applied when on top of any other mutators. The default mutators are specified in the ``config/littlejwt.php`` file:
@@ -285,3 +317,69 @@ LittleJWT::withMutate()->mutate(function (Mutators $mutators) { }); // Works!
 // Without mutate:
 LittleJWT::withoutMutate()->mutate(function (Mutators $mutators) { }); // Doesn't work!
 ```
+
+# Custom Mutators
+
+To create a custom mutator, first create a class that implements the ``LittleApps\LittleJWT\Contracts\Mutator`` interface:
+
+```php
+<?php
+
+namespace App\Components\LittleJWT;
+
+use LittleApps\LittleJWT\Contracts\Mutator;
+use LittleApps\LittleJWT\JWT\JsonWebToken;
+
+class MyMutator implements Mutator
+{
+    /**
+     * @inheritDoc
+     */
+    public function serialize($value, string $key, array $args, JsonWebToken $jwt)
+    {
+        /* ... */
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function unserialize($value, string $key, array $args, JsonWebToken $jwt)
+    {
+        /* ... */
+    }
+}
+```
+
+The ``serialize`` and ``unserialize`` methods both take in the existing serialized (for ``unserialize``) or unserialized (for ``serialize``) claim value, claim key, any specified arguments, and the original JWT. They return the serialized or unserialized value. 
+
+The following mutator example serializes the claim value as an upper-case string and unserializes it as a lower-case string:
+
+```php
+<?php
+
+namespace App\Components\LittleJWT;
+
+use LittleApps\LittleJWT\Contracts\Mutator;
+use LittleApps\LittleJWT\JWT\JsonWebToken;
+
+class MyMutator implements Mutator
+{
+    /**
+     * @inheritDoc
+     */
+    public function serialize($value, string $key, array $args, JsonWebToken $jwt)
+    {
+        return strtoupper($value);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function unserialize($value, string $key, array $args, JsonWebToken $jwt)
+    {
+        return strtolower($value);
+    }
+}
+```
+
+ > If no value is return by the ``serialize`` or ``unserialize`` method, the claim value becomes ``null``.
