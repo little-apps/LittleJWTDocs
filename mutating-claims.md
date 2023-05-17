@@ -2,7 +2,7 @@
 title: Mutating
 description: 
 published: true
-date: 2023-05-17T05:34:32.421Z
+date: 2023-05-17T07:27:14.025Z
 tags: claims, dates, encryption, mutating, mutators, numbers, objects, parsing
 editor: markdown
 dateCreated: 2022-02-05T07:00:11.445Z
@@ -63,7 +63,7 @@ $result = LittleJWT::mutate(function (Mutators $mutators) {
     ->valid();
 });
 
-$unserialized = $result->unserialize();
+$unserialized = $result->unserialized();
 
 // $unserialized has payload claim 'foo' with value a Carbon instance (representing '2023-05-16')
 ```
