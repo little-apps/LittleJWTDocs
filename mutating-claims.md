@@ -2,7 +2,7 @@
 title: Mutating
 description: 
 published: true
-date: 2023-05-18T06:41:29.800Z
+date: 2023-05-18T07:03:57.682Z
 tags: claims, dates, encryption, mutating, mutators, numbers, objects, parsing
 editor: markdown
 dateCreated: 2022-02-05T07:00:11.445Z
@@ -260,6 +260,8 @@ Multiple mutators can be stacked for a single claim using the ``StackMutator``:
 use LittleApps\LittleJWT\Facades\LittleJWT;
 use LittleApps\LittleJWT\Build\Builder;
 use LittleApps\LittleJWT\Mutate\Mutators\StackMutator;
+use LittleApps\LittleJWT\Mutate\Mutators\DoubleMutator;
+use LittleApps\LittleJWT\Mutate\Mutators\EncryptMutator;
 
 $stack =
   (new StackMutator())
@@ -272,6 +274,34 @@ $serialized = LittleJWT::mutate(function (Mutators $mutators) use ($stack) {
 })->create(function (Builder $builder) {
   $builder->foo('abc');
 });
+```
+
+When JWTs are unserialized, the stack is reversed so the input is changed to the output and the output is changed to the input in the correct order:
+
+```php
+use LittleApps\LittleJWT\Facades\LittleJWT;
+use LittleApps\LittleJWT\Build\Builder;
+use LittleApps\LittleJWT\Mutate\Mutators\StackMutator;
+use LittleApps\LittleJWT\Mutate\Mutators\DoubleMutator;
+use LittleApps\LittleJWT\Mutate\Mutators\EncryptMutator;
+
+$stack =
+  (new StackMutator())
+    // Adding the EncryptMutator first will cause an error.
+    ->mutator(new DoubleMutator)
+    ->mutator(new EncryptMutator);
+
+$serialized = LittleJWT::mutate(function (Mutators $mutators) use ($stack) {
+  $mutators->foo($stack);
+})->create(function (Builder $builder) {
+  $builder->foo(1234.1234);
+});
+
+// $serialized->getPayload()->get('foo') == 'ey...'
+
+$unserialized = $handler->validate($serialized)->unserialized();
+
+// $unserialized->getPayload()->get('foo') == 1234.1234
 ```
 
 # Default Mutators
