@@ -2,7 +2,7 @@
 title: Mutating
 description: 
 published: true
-date: 2023-05-18T07:03:57.682Z
+date: 2023-05-18T07:04:48.486Z
 tags: claims, dates, encryption, mutating, mutators, numbers, objects, parsing
 editor: markdown
 dateCreated: 2022-02-05T07:00:11.445Z
@@ -290,10 +290,12 @@ $stack =
     // Adding the EncryptMutator first will cause an error.
     ->mutator(new DoubleMutator)
     ->mutator(new EncryptMutator);
-
-$serialized = LittleJWT::mutate(function (Mutators $mutators) use ($stack) {
+    
+$handler = LittleJWT::mutate(function (Mutators $mutators) use ($stack) {
   $mutators->foo($stack);
-})->create(function (Builder $builder) {
+});
+
+$serialized = $handler->create(function (Builder $builder) {
   $builder->foo(1234.1234);
 });
 
