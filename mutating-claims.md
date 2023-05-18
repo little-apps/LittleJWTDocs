@@ -2,7 +2,7 @@
 title: Mutating
 description: 
 published: true
-date: 2023-05-17T07:27:14.025Z
+date: 2023-05-18T06:41:29.800Z
 tags: claims, dates, encryption, mutating, mutators, numbers, objects, parsing
 editor: markdown
 dateCreated: 2022-02-05T07:00:11.445Z
@@ -119,7 +119,7 @@ LittleJWT::passMutatorsThru(function (Mutators $mutators) {
 $jwt = LittleJWT::create();
 ```
 
-You can also use this method to apply mutators to an existing ``MutateHandler`` variable:
+You can also use this method to apply mutators to an existing ``MutateHandler`` instance:
 
 ```php
 use LittleApps\LittleJWT\Facades\LittleJWT;
@@ -249,6 +249,28 @@ use App\Models\User;
 
 LittleJWT::mutate(function (Mutators $mutators) {
   $mutators->sub(sprintf('model:%s', User::class)); // The Model class needs to be specified.
+});
+```
+
+## Stacking
+
+Multiple mutators can be stacked for a single claim using the ``StackMutator``:
+
+```php
+use LittleApps\LittleJWT\Facades\LittleJWT;
+use LittleApps\LittleJWT\Build\Builder;
+use LittleApps\LittleJWT\Mutate\Mutators\StackMutator;
+
+$stack =
+  (new StackMutator())
+    // Only \LittleApps\LittleJWT\Contracts\Mutator instances can be passed. 
+    ->mutator($mutator1)
+    ->mutator($mutator2);
+
+$serialized = LittleJWT::mutate(function (Mutators $mutators) use ($stack) {
+  $mutators->foo($stack);
+})->create(function (Builder $builder) {
+  $builder->foo('abc');
 });
 ```
 
