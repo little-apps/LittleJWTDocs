@@ -2,7 +2,7 @@
 title: Mutating
 description: 
 published: true
-date: 2023-05-18T07:04:48.486Z
+date: 2023-05-19T06:11:03.800Z
 tags: claims, dates, encryption, mutating, mutators, numbers, objects, parsing
 editor: markdown
 dateCreated: 2022-02-05T07:00:11.445Z
@@ -161,7 +161,7 @@ LittleJWT::mutate(function (Mutators $mutators) {
 
 # Available Mutators
 
-A list of possible mutators is below:
+A list of possible primitive mutators is below:
 
  * ``array``
  * ``bool``
@@ -259,6 +259,7 @@ Multiple mutators can be stacked for a single claim using the ``StackMutator``:
 ```php
 use LittleApps\LittleJWT\Facades\LittleJWT;
 use LittleApps\LittleJWT\Build\Builder;
+use LittleApps\LittleJWT\Mutate\Mutators;
 use LittleApps\LittleJWT\Mutate\Mutators\StackMutator;
 use LittleApps\LittleJWT\Mutate\Mutators\DoubleMutator;
 use LittleApps\LittleJWT\Mutate\Mutators\EncryptMutator;
@@ -281,6 +282,7 @@ When JWTs are unserialized, the stack is reversed so the input is changed to the
 ```php
 use LittleApps\LittleJWT\Facades\LittleJWT;
 use LittleApps\LittleJWT\Build\Builder;
+use LittleApps\LittleJWT\Mutate\Mutators;
 use LittleApps\LittleJWT\Mutate\Mutators\StackMutator;
 use LittleApps\LittleJWT\Mutate\Mutators\DoubleMutator;
 use LittleApps\LittleJWT\Mutate\Mutators\EncryptMutator;
@@ -348,6 +350,7 @@ Mutations can be enabled or disabled completely. If disabled, the mutation funct
 
 ```php
 use LittleApps\LittleJWT\Facades\LittleJWT;
+use LittleApps\LittleJWT\Mutate\Mutators;
 
 // Enables mutating:
 LittleJWT::alwaysMutate(true);
@@ -364,6 +367,7 @@ The ``withMutate`` and ``withoutMutate`` methods can also be used to enable or d
 
 ```php
 use LittleApps\LittleJWT\Facades\LittleJWT;
+use LittleApps\LittleJWT\Mutate\Mutators;
 
 // With mutate:
 LittleJWT::withMutate()->mutate(function (Mutators $mutators) { }); // Works!
@@ -406,7 +410,7 @@ class MyMutator implements Mutator
 
 The ``serialize`` and ``unserialize`` methods both take in the existing serialized (for ``unserialize``) or unserialized (for ``serialize``) claim value, claim key, any specified arguments, and the original JWT. They return the serialized or unserialized value. 
 
-The following mutator example serializes the claim value as an upper-case string and unserializes it as a lower-case string:
+The following example serializes the claim value as an upper-case string and unserializes it back as a lower-case string:
 
 ```php
 <?php
@@ -436,4 +440,88 @@ class MyMutator implements Mutator
 }
 ```
 
- > If no value is return by the ``serialize`` or ``unserialize`` method, the claim value becomes ``null``.
+ > If no value is returned by the ``serialize`` or ``unserialize`` methods, the return value is assumed to be ``null``.
+ 
+## Applying Custom Mutators
+
+### Mutator Instance
+
+Custom mutators can be applied, much like the other mutators, by applying the ``Mutator`` instance to the ``Mutators`` instance:
+
+```php
+use LittleApps\LittleJWT\Facades\LittleJWT;
+use LittleApps\LittleJWT\Mutate\Mutators;
+    
+LittleJWT::mutate(function (Mutators $mutators) {
+  $mutators->foo(new MyMutator);
+});
+```
+
+### Custom Mutator Mapping
+
+A custom string key can also be used to map to the custom mutator.
+
+First, it will need to be mapped in the boot method of a service provider:
+
+```php
+<?php
+
+namespace App\Providers;
+
+use Illuminate\Support\ServiceProvider;
+use LittleApps\LittleJWT\Facades\LittleJWT;
+
+class AppServiceProvider extends ServiceProvider
+{
+    /**
+     * Bootstrap any application services.
+     */
+    public function boot(): void
+    {
+        LittleJWT::customMutator('example', MyMutator::class);
+
+        // You may need to bind the custom mutator with the app container:
+        $this->app->bind(MyMutator::class, function ($app) {
+          return new MyMutator();
+        });
+    }
+}
+```
+
+The string key can then be used instead of the ``Mutator`` instance:
+
+```php
+use LittleApps\LittleJWT\Facades\LittleJWT;
+use LittleApps\LittleJWT\Mutate\Mutators;
+    
+LittleJWT::mutate(function (Mutators $mutators) {
+  $mutators->foo('example');
+});
+```
+
+### Resolve Method
+
+Alternatively, a resolve method can be injected into the ``MutatorResolver`` class to allow a mutator to be mapped to a custom key:
+
+```php
+use LittleApps\LittleJWT\Facades\LittleJWT;
+use LittleApps\LittleJWT\Mutate\Mutators;
+
+// Probably add this to the boot method of a service provider:
+MutatorResolver::macro('resolveCustom', function () {
+  return new MyMutator();
+});
+
+// Later on in your code:
+LittleJWT::mutate(function (Mutators $mutators) {
+  $mutators->foo('custom');
+});
+```
+
+## Order
+
+The mutator instances are resolved in the following order. If a mutator is found, none of the remaining checks are done.
+
+ 1. Primitive mappings (see above)
+ 2. Resolve method
+ 3. Custom mutator mapping
