@@ -2,8 +2,8 @@
 title: Mutating
 description: 
 published: true
-date: 2023-05-20T06:18:41.989Z
-tags: claims, dates, encryption, mutating, mutators, numbers, objects, parsing
+date: 2023-05-20T06:19:58.422Z
+tags: claims, dates, encryption, mutating, mutators, numbers, objects, parsing, serializing, unserializing, mutate
 editor: markdown
 dateCreated: 2022-02-05T07:00:11.445Z
 ---
