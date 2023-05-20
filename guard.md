@@ -2,7 +2,7 @@
 title: Guard
 description: 
 published: true
-date: 2023-05-15T06:14:37.191Z
+date: 2023-05-20T06:03:34.607Z
 tags: adapters, auth.php, authentication, config, configuration, custom adapter, fingerprint, generic, guard, laravel, user provider
 editor: markdown
 dateCreated: 2022-02-05T06:58:51.801Z
@@ -293,6 +293,33 @@ class MyAdapter extends AbstractAdapter {
 }
 ```
 
+#### Handler
+
+The LittleJWT handler used by the adapter can be changed. This is useful if mutators should be set. This is done by overriding the ``getHandler`` method (provided by ``AbstractAdapter``):
+
+```php
+use LittleApps\LittleJWT\Guards\Adapters\AbstractAdapter;
+use LittleApps\LittleJWT\LittleJWT;
+use LittleApps\LittleJWT\Mutate\Mutators;
+
+class MyAdapter extends AbstractAdapter {
+    // ...
+  
+    /**
+     * Gets the LittleJWT handler
+     *
+     * @return \LittleApps\LittleJWT\Core\Handler
+     */
+    protected function getHandler() {
+        return
+            $this->container->make(LittleJWT::class)
+                ->mutate(function(Mutators $mutators) {
+                    // ...
+                });
+    }
+}
+```
+
 ### Option B: Implement ``GuardAdapter``
 
 The ``GuardAdapter`` interface allows you to have more control over how the token is parsed, validated, and the user is retrieved.
@@ -301,17 +328,9 @@ Create a class that implements the ``GuardAdapter`` interface and implement the 
 
 ```php
 use LittleApps\LittleJWT\Contracts\GuardAdapter;
-use LittleApps\LittleJWT\LittleJWT;
 use LittleApps\LittleJWT\JWT\JsonWebToken;
 
 class MyAdapter implements GuardAdapter {
-    /**
-     * The instance for building and validating JWTs
-     *
-     * @var LittleJWT
-     */
-    protected $jwt;
-
     /**
      * The options to use for the adapter.
      *
@@ -324,10 +343,8 @@ class MyAdapter implements GuardAdapter {
      *
      * @return void
      */
-    public function __construct(LittleJWT $jwt, array $config)
+    public function __construct(array $config)
     {
-        $this->jwt = $jwt;
-
         $this->config = $config;
     }
 
@@ -368,14 +385,6 @@ class MyAdapter implements GuardAdapter {
 }
 ```
 
-#### Notes
-
-* If implementing the ``GuardAdapter`` interface, use [dependency injection](https://laravel.com/docs/8.x/container#method-invocation-and-injection) with the constructor to automatically include any needed dependencies for the adapter.
-* If extending the ``AbstractAdapter`` class, a callback array referencing the ``validate`` method in a [Validatable instance](/validatables) can also be returned by the ``getValidatorCallback`` method.
-* Any additional public methods specified in the guard adapter can be called using the ``Illuminate\Support\Facades\Auth`` facade.
-* The [``BuildsJwt`` trait](https://github.com/little-apps/LittleJWT/blob/main/src/Guards/Adapters/Concerns/BuildsJwt.php) can be used if the guard adapter builds JWTs for users. It currently only works with the ``AbstractAdapter`` since it requires the ``$jwt`` property.
-* Use the [``HasRequest`` trait](https://github.com/little-apps/LittleJWT/blob/main/src/Guards/Adapters/Concerns/HasRequest.php) if the guard adapter will need anything from the request.
-
 ## 2. Configuration
 
 Add an entry to the the ``config/littlejwt.php`` file that has the class for the adapter and any other configuration options will be passed to the adapter class constructor when it's created:
@@ -412,3 +421,11 @@ return [
     ],
 ];
 ```
+
+## Notes
+
+* If implementing the ``GuardAdapter`` interface, use [dependency injection](https://laravel.com/docs/8.x/container#method-invocation-and-injection) with the constructor to automatically include any needed dependencies for the adapter.
+* If extending the ``AbstractAdapter`` class, a callback array can also be returned by the ``getValidatorCallback`` method.
+* Any additional public methods specified in the guard adapter can be called using the ``Illuminate\Support\Facades\Auth`` facade.
+* The [``BuildsJwt`` trait](https://github.com/little-apps/LittleJWT/blob/main/src/Guards/Adapters/Concerns/BuildsJwt.php) can be used if the guard adapter builds JWTs for users. It currently only works with the ``AbstractAdapter`` since it requires the ``$jwt`` property.
+* Use the [``HasRequest`` trait](https://github.com/little-apps/LittleJWT/blob/main/src/Guards/Adapters/Concerns/HasRequest.php) if the guard adapter will need anything from the request.
