@@ -2,7 +2,7 @@
 title: Mutating
 description: 
 published: true
-date: 2023-05-19T06:11:03.800Z
+date: 2023-05-20T06:17:55.450Z
 tags: claims, dates, encryption, mutating, mutators, numbers, objects, parsing
 editor: markdown
 dateCreated: 2022-02-05T07:00:11.445Z
@@ -520,8 +520,8 @@ LittleJWT::mutate(function (Mutators $mutators) {
 
 ## Order
 
-The mutator instances are resolved in the following order. If a mutator is found, none of the remaining checks are done.
+The mutator instances are resolved in the following order. If a mutator is resolved, none of the remaining checks are done. If the mutator is not resolved, the claim value remains unchanged.
 
- 1. Primitive mappings (see above)
- 2. Resolve method
- 3. Custom mutator mapping
+ 1. [Primitive Mappings](#available-mutators)
+ 2. [Resolve Method](#resolve-method)
+ 3. [Custom Mutator Mapping](#custom-mutator-mapping)
