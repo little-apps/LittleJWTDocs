@@ -2,7 +2,7 @@
 title: Guard
 description: 
 published: true
-date: 2023-05-20T06:03:34.607Z
+date: 2023-05-20T06:05:48.571Z
 tags: adapters, auth.php, authentication, config, configuration, custom adapter, fingerprint, generic, guard, laravel, user provider
 editor: markdown
 dateCreated: 2022-02-05T06:58:51.801Z
@@ -319,6 +319,8 @@ class MyAdapter extends AbstractAdapter {
     }
 }
 ```
+
+ > See [Mutating](/mutating-claims) for more information on available mutators.
 
 ### Option B: Implement ``GuardAdapter``
 
